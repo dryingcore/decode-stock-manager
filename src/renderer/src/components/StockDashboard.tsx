@@ -1,4 +1,3 @@
-import React from 'react'
 import { Box, Typography } from '@mui/material'
 import SummaryCards from './Dashboard/SummaryCards'
 import BarEntradasSaidas from './Dashboard/BarEntryOut'
