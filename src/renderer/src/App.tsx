@@ -1,23 +1,30 @@
-import { Box, } from '@mui/material'
+import React, { useState } from 'react'
+import { Box } from '@mui/material'
 import { AutoHideSidebar } from './components/AutoHideSidebar'
-import StockDashboard from './components/StockDashboard'
 
-const App = () => {
+import Dashboard from './components/StockDashboard'
+import Estoque from './components/StockManager'
+
+const App: React.FC = () => {
+  const [activeView, setActiveView] = useState<string>('Dashboard')
+
+  const renderContent = (): React.ReactNode => {
+    switch (activeView) {
+      case 'Dashboard':
+        return <Dashboard />
+      case 'Estoque':
+        return <Estoque />
+      case 'Relatórios':
+        return null
+      default:
+        return <Box>404 - Página não encontrada</Box>
+    }
+  }
+
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <AutoHideSidebar />
-
-      <Box
-        sx={{
-          ml: '60px', // margem da sidebar
-          flexGrow: 1,
-          backgroundColor: '#f5f5f5',
-          p: 3,
-          overflowY: 'auto'
-        }}
-      >
-        <StockDashboard />
-      </Box>
+    <Box sx={{ display: 'flex' }}>
+      <AutoHideSidebar setActiveView={setActiveView} />
+      <Box sx={{ flexGrow: 1, p: 2, ml: '60px' }}>{renderContent()}</Box>
     </Box>
   )
 }

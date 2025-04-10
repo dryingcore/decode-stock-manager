@@ -4,8 +4,12 @@ import MenuIcon from '@mui/icons-material/Menu'
 
 const drawerWidth = 300
 
-export const AutoHideSidebar: React.FC = () => {
-  const [open, setOpen] = useState(false)
+interface AutoHideSidebarProps {
+  setActiveView: (view: string) => void
+}
+
+export const AutoHideSidebar: React.FC<AutoHideSidebarProps> = ({ setActiveView }) => {
+  const [open, setOpen] = useState<boolean>(false)
 
   const handleMouseEnter = () => setOpen(true)
   const handleMouseLeave = () => setOpen(false)
@@ -47,13 +51,13 @@ export const AutoHideSidebar: React.FC = () => {
         }}
       >
         <List>
-          <ListItemButton>
+          <ListItemButton onClick={() => setActiveView('Dashboard')}>
             <ListItemText primary="Dashboard" />
           </ListItemButton>
-          <ListItemButton>
+          <ListItemButton onClick={() => setActiveView('Estoque')}>
             <ListItemText primary="Estoque" />
           </ListItemButton>
-          <ListItemButton>
+          <ListItemButton onClick={() => setActiveView('Relatórios')}>
             <ListItemText primary="Relatórios" />
           </ListItemButton>
         </List>
