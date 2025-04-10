@@ -1,7 +1,10 @@
+import { app } from 'electron';
 import path from "path";
 import fs from "fs";
 
-const dataPath = path.join(__dirname, "data.json");
+
+const dataPath = path.join(app.getPath('userData'), 'data.json');
+
 
 export function saveData(data: any) {
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), "utf8");
