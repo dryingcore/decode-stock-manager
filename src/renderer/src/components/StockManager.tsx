@@ -1,10 +1,32 @@
-import { useState } from 'react'
-import { Box, Typography, Tabs, Tab, Paper, Button, TextField, InputAdornment } from '@mui/material'
+declare global {
+  interface Window {
+    electronAPI: {
+      saveData: (data: any) => void
+      loadData: () => Promise<any>
+    }
+  }
+}
+
+import { useEffect, useState } from 'react'
+import {
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Paper,
+  Button,
+  TextField,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemText
+} from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
 
 export default function StockManager() {
   const [tab, setTab] = useState(0)
+  const [items, setItems] = useState<any[]>([])
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     setTab(newValue)
@@ -22,6 +44,26 @@ export default function StockManager() {
         return 'Adicionar'
     }
   }
+
+  const handleAdd = () => {
+    const novoItem = {
+      tipo: tab === 1 ? 'entrada' : tab === 2 ? 'saida' : tab === 3 ? 'produto' : 'desconhecido',
+      nome: `Item ${items.length + 1}`,
+      data: new Date().toISOString()
+    }
+    const novos = [...items, novoItem]
+    setItems(novos)
+    window.electronAPI.saveData(novos)
+  }
+
+  const carregarDados = async () => {
+    const dados = await window.electronAPI.loadData()
+    if (dados) setItems(dados)
+  }
+
+  useEffect(() => {
+    carregarDados()
+  }, [])
 
   return (
     <Box sx={{ p: 3 }}>
@@ -67,7 +109,12 @@ export default function StockManager() {
                 }}
                 sx={{ flex: 1, minWidth: '200px' }}
               />
-              <Button variant="contained" startIcon={<AddIcon />} sx={{ whiteSpace: 'nowrap' }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleAdd}
+                sx={{ whiteSpace: 'nowrap' }}
+              >
                 {getAddButtonText()}
               </Button>
             </Box>
@@ -76,16 +123,24 @@ export default function StockManager() {
           {tab === 0 && (
             <Typography>Conteúdo da Visão Geral (ex: resumo, KPIs, alertas...)</Typography>
           )}
-          {tab === 1 && (
-            <Typography>Conteúdo de Entradas (ex: adicionar item, histórico...)</Typography>
-          )}
-          {tab === 2 && (
-            <Typography>Conteúdo de Saídas (ex: registrar saída, histórico...)</Typography>
-          )}
-          {tab === 3 && (
-            <Typography>
-              Conteúdo do Estoque Atual (ex: lista de produtos, quantidades...)
-            </Typography>
+          {tab >= 1 && (
+            <List>
+              {items
+                .filter((item) =>
+                  tab === 1
+                    ? item.tipo === 'entrada'
+                    : tab === 2
+                      ? item.tipo === 'saida'
+                      : tab === 3
+                        ? item.tipo === 'produto'
+                        : false
+                )
+                .map((item, index) => (
+                  <ListItem key={index} divider>
+                    <ListItemText primary={item.nome} secondary={item.data} />
+                  </ListItem>
+                ))}
+            </List>
           )}
         </Box>
       </Paper>
