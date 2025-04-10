@@ -1,12 +1,3 @@
-declare global {
-  interface Window {
-    electronAPI: {
-      saveData: (data: any) => void
-      loadData: () => Promise<any>
-    }
-  }
-}
-
 import { useEffect, useState } from 'react'
 import {
   Box,
@@ -24,41 +15,79 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
 
+type Produto = {
+  nome: string
+  quantidade: number
+}
+
+declare global {
+  interface Window {
+    electronAPI: {
+      saveData: (data: any) => void
+      loadData: () => Promise<any>
+    }
+  }
+}
 export default function StockManager() {
   const [tab, setTab] = useState(0)
-  const [items, setItems] = useState<any[]>([])
+  const [estoque, setEstoque] = useState<Produto[]>([])
+  const [nome, setNome] = useState('')
+  const [quantidade, setQuantidade] = useState<number>(0)
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     setTab(newValue)
+    setNome('')
+    setQuantidade(0)
   }
 
-  const getAddButtonText = () => {
-    switch (tab) {
-      case 1:
-        return 'Adicionar Entrada'
-      case 2:
-        return 'Registrar Saída'
-      case 3:
-        return 'Adicionar Produto'
-      default:
-        return 'Adicionar'
-    }
+  const salvarEstoque = (novos: Produto[]) => {
+    setEstoque(novos)
+    window.electronAPI.saveData(novos)
   }
 
   const handleAdd = () => {
-    const novoItem = {
-      tipo: tab === 1 ? 'entrada' : tab === 2 ? 'saida' : tab === 3 ? 'produto' : 'desconhecido',
-      nome: `Item ${items.length + 1}`,
-      data: new Date().toISOString()
+    if (!nome || quantidade <= 0) return
+
+    const index = estoque.findIndex((p) => p.nome.toLowerCase() === nome.toLowerCase())
+    const novoEstoque = [...estoque]
+
+    if (tab === 1) {
+      // Entrada
+      if (index !== -1) {
+        novoEstoque[index].quantidade += quantidade
+      } else {
+        alert('Produto não encontrado no estoque.')
+        return
+      }
+    } else if (tab === 2) {
+      // Saída
+      if (index !== -1) {
+        if (novoEstoque[index].quantidade < quantidade) {
+          alert('Quantidade insuficiente no estoque.')
+          return
+        }
+        novoEstoque[index].quantidade -= quantidade
+      } else {
+        alert('Produto não encontrado no estoque.')
+        return
+      }
+    } else if (tab === 3) {
+      // Novo produto
+      if (index !== -1) {
+        alert('Produto já existe.')
+        return
+      }
+      novoEstoque.push({ nome, quantidade })
     }
-    const novos = [...items, novoItem]
-    setItems(novos)
-    window.electronAPI.saveData(novos)
+
+    salvarEstoque(novoEstoque)
+    setNome('')
+    setQuantidade(0)
   }
 
   const carregarDados = async () => {
     const dados = await window.electronAPI.loadData()
-    if (dados) setItems(dados)
+    if (dados) setEstoque(dados)
   }
 
   useEffect(() => {
@@ -90,56 +119,44 @@ export default function StockManager() {
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: 'space-between',
-                mb: 2,
+                flexDirection: 'column',
                 gap: 2,
-                flexWrap: 'wrap'
+                mb: 2,
+                maxWidth: 400
               }}
             >
               <TextField
-                variant="outlined"
-                size="small"
-                placeholder="Pesquisar..."
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  )
-                }}
-                sx={{ flex: 1, minWidth: '200px' }}
+                label="Nome do Produto"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                fullWidth
               />
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAdd}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                {getAddButtonText()}
+              <TextField
+                label="Quantidade"
+                type="number"
+                value={quantidade}
+                onChange={(e) => setQuantidade(Number(e.target.value))}
+                fullWidth
+              />
+              <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>
+                {tab === 1
+                  ? 'Adicionar Entrada'
+                  : tab === 2
+                    ? 'Registrar Saída'
+                    : 'Adicionar Produto'}
               </Button>
             </Box>
           )}
 
-          {tab === 0 && (
-            <Typography>Conteúdo da Visão Geral (ex: resumo, KPIs, alertas...)</Typography>
-          )}
-          {tab >= 1 && (
+          {tab === 0 && <Typography>Resumo e KPIs vão aqui futuramente.</Typography>}
+
+          {tab === 3 && (
             <List>
-              {items
-                .filter((item) =>
-                  tab === 1
-                    ? item.tipo === 'entrada'
-                    : tab === 2
-                      ? item.tipo === 'saida'
-                      : tab === 3
-                        ? item.tipo === 'produto'
-                        : false
-                )
-                .map((item, index) => (
-                  <ListItem key={index} divider>
-                    <ListItemText primary={item.nome} secondary={item.data} />
-                  </ListItem>
-                ))}
+              {estoque.map((item, index) => (
+                <ListItem key={index} divider>
+                  <ListItemText primary={item.nome} secondary={`Quantidade: ${item.quantidade}`} />
+                </ListItem>
+              ))}
             </List>
           )}
         </Box>
